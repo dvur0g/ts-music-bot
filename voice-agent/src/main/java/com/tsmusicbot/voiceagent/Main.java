@@ -10,6 +10,7 @@ public final class Main {
 
   private Main() {}
 
+  /** Starts the voice-agent process. */
   public static void main(String[] args) {
     log.info("ts-music-bot voice-agent starting");
   }
