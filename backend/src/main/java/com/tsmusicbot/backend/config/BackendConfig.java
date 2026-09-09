@@ -55,7 +55,7 @@ public record BackendConfig(
         required(env, "TS_QUERY_USERNAME"),
         required(env, "TS_QUERY_PASSWORD"),
         optionalInt(env, "TS_VIRTUAL_SERVER_ID", DEFAULT_VIRTUAL_SERVER_ID),
-        env.apply("TS_NICKNAME") == null ? DEFAULT_NICKNAME : env.apply("TS_NICKNAME"));
+        optionalString(env, "TS_NICKNAME", DEFAULT_NICKNAME));
   }
 
   private static String required(Function<String, String> env, String name) {
@@ -64,6 +64,12 @@ public record BackendConfig(
       throw new IllegalStateException("Missing required environment variable: " + name);
     }
     return value;
+  }
+
+  private static String optionalString(
+      Function<String, String> env, String name, String defaultValue) {
+    String value = env.apply(name);
+    return (value == null || value.isBlank()) ? defaultValue : value;
   }
 
   private static int optionalInt(Function<String, String> env, String name, int defaultValue) {

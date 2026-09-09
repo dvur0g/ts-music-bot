@@ -16,24 +16,29 @@ public final class Main {
   public static void main(String[] args) {
     log.info("ts-music-bot backend starting");
 
-    BackendConfig config = BackendConfig.fromEnv();
-    ServerQueryConnection connection =
-        ServerQueryConnection.connect(
-            config,
-            message ->
-                log.info(
-                    "chat [{}] {} ({}): {}",
-                    message.targetMode(),
-                    message.senderName(),
-                    message.senderUniqueId(),
-                    message.text()));
+    try {
+      BackendConfig config = BackendConfig.fromEnv();
+      ServerQueryConnection connection =
+          ServerQueryConnection.connect(
+              config,
+              message ->
+                  log.info(
+                      "chat [{}] {} ({}): {}",
+                      message.target(),
+                      message.senderName(),
+                      message.senderUniqueId(),
+                      message.text()));
 
-    Runtime.getRuntime().addShutdownHook(new Thread(connection::close, "shutdown"));
+      Runtime.getRuntime().addShutdownHook(new Thread(connection::close, "shutdown"));
 
-    log.info(
-        "connected to {}:{} as \"{}\", listening for chat messages",
-        config.host(),
-        config.queryPort(),
-        config.nickname());
+      log.info(
+          "connected to {}:{} as \"{}\", listening for chat messages",
+          config.host(),
+          config.queryPort(),
+          config.nickname());
+    } catch (RuntimeException e) {
+      log.error("Failed to start backend", e);
+      System.exit(1);
+    }
   }
 }

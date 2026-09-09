@@ -3,7 +3,9 @@ package com.tsmusicbot.backend.teamspeak;
 import com.github.theholywaffle.teamspeak3.TS3Api;
 import com.github.theholywaffle.teamspeak3.TS3Config;
 import com.github.theholywaffle.teamspeak3.TS3Query;
+import com.github.theholywaffle.teamspeak3.api.TextMessageTargetMode;
 import com.github.theholywaffle.teamspeak3.api.event.TS3EventAdapter;
+import com.github.theholywaffle.teamspeak3.api.event.TS3EventType;
 import com.github.theholywaffle.teamspeak3.api.event.TextMessageEvent;
 import com.tsmusicbot.backend.config.BackendConfig;
 import java.util.function.Consumer;
@@ -49,14 +51,25 @@ public final class ServerQueryConnection implements AutoCloseable {
                     event.getInvokerName(),
                     event.getInvokerUniqueId(),
                     event.getMessage(),
-                    event.getTargetMode()));
+                    toTarget(event.getTargetMode())));
           }
         });
-    // Chat notifications only arrive for events the query has registered for; this covers
-    // server, channel (in the query's current channel), and private text messages.
-    api.registerAllEvents();
+    // Only subscribe to the text-message events we actually consume, not registerAllEvents()'s
+    // full set (client join/leave, moves, channel/server edits, ...). Channel text is limited to
+    // the channel the query is currently in; that limitation is inherent to ServerQuery itself.
+    api.registerEvent(TS3EventType.TEXT_SERVER);
+    api.registerEvent(TS3EventType.TEXT_CHANNEL);
+    api.registerEvent(TS3EventType.TEXT_PRIVATE);
 
     return new ServerQueryConnection(query);
+  }
+
+  private static ChatMessage.Target toTarget(TextMessageTargetMode mode) {
+    return switch (mode) {
+      case SERVER -> ChatMessage.Target.SERVER;
+      case CHANNEL -> ChatMessage.Target.CHANNEL;
+      case CLIENT -> ChatMessage.Target.PRIVATE;
+    };
   }
 
   /** Disconnects the query and releases its resources. Safe to call more than once. */
